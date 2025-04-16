@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Informe House of Life</title>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <style>
+    body { font-family: 'Georgia', serif; background-color: #f6f1eb; color: #333; padding: 30px; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #b2967d; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; }
+    button { margin-top: 25px; width: 100%; padding: 15px; font-size: 16px; background-color: #b2967d; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    button:hover { background-color: #a1846e; }
+    .output { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Generador de Informe House of Life</h1>
+    <label>Link de la propiedad:</label>
+    <input type="text" id="link" placeholder="https://...">
+
+    <label>Tipo de propiedad:</label>
+    <input type="text" id="tipo" placeholder="Ej. Departamento, Casa...">
+
+    <label>Ubicación:</label>
+    <input type="text" id="ubicacion" placeholder="Colonia, Ciudad...">
+
+    <label>Características destacadas:</label>
+    <textarea id="caracteristicas" rows="3"></textarea>
+
+    <label>Nombre del asesor:</label>
+    <input type="text" id="asesor">
+
+    <button id="generarBtn">Generar informe PDF</button>
+
+    <div id="output" class="output">
+      <h2>Informe de Mercado Inmobiliario</h2>
+      <p><strong>Tipo:</strong> <span id="ot-tipo"></span></p>
+      <p><strong>Ubicación:</strong> <span id="ot-ubicacion"></span></p>
+      <p><strong>Características:</strong> <span id="ot-caracteristicas"></span></p>
+      <p><strong>Link:</strong> <span id="ot-link"></span></p>
+      <p><strong>Asesor:</strong> <span id="ot-asesor"></span></p>
+      <p><strong>Resumen ejecutivo:</strong> <span id="gpt1"></span></p>
+      <p><strong>Análisis del entorno:</strong> <span id="gpt2"></span></p>
+      <p><strong>Valor estimado:</strong> <span id="gpt3"></span></p>
+      <p><strong>Conclusión:</strong> <span id="gpt4"></span></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("generarBtn").addEventListener("click", async function () {
+      const apiKey = "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";
+      const link = document.getElementById("link").value;
+      const tipo = document.getElementById("tipo").value;
+      const ubicacion = document.getElementById("ubicacion").value;
+      const caracteristicas = document.getElementById("caracteristicas").value;
+      const asesor = document.getElementById("asesor").value;
+
+      document.getElementById("ot-link").innerText = link;
+      document.getElementById("ot-tipo").innerText = tipo;
+      document.getElementById("ot-ubicacion").innerText = ubicacion;
+      document.getElementById("ot-caracteristicas").innerText = caracteristicas;
+      document.getElementById("ot-asesor").innerText = asesor;
+
+      const prompt = `Genera un informe profesional inmobiliario estilo Pararelo 33 basado en:
+Tipo: ${tipo}
+Ubicación: ${ubicacion}
+Características: ${caracteristicas}
+Link: ${link}
+1. Resumen ejecutivo
+2. Análisis del entorno a 5 km
+3. Valor estimado y justificación
+4. Conclusión clara`;
+
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": \`Bearer \${apiKey}\`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "gpt-4",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
+          })
+        });
+
+        const data = await res.json();
+        const texto = data.choices[0].message.content.split("\n").filter(x => x.trim() !== "");
+
+        document.getElementById("gpt1").innerText = texto[1] || "";
+        document.getElementById("gpt2").innerText = texto[3] || "";
+        document.getElementById("gpt3").innerText = texto[5] || "";
+        document.getElementById("gpt4").innerText = texto[7] || "";
+
+        document.getElementById("output").style.display = "block";
+
+        html2pdf().from(document.getElementById("output")).set({
+          margin: 0.5,
+          filename: 'Informe_HouseOfLife.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        }).save();
+      } catch (err) {
+        alert("Error generando el informe. Revisa tu API Key o conexión.");
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
